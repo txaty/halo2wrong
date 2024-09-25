@@ -36,7 +36,7 @@ pub struct BaseFieldEccChip<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const 
 }
 
 impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    BaseFieldEccChip<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+BaseFieldEccChip<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Return `BaseEccChip` from `EccConfig`
     pub fn new(config: EccConfig) -> Self {
@@ -104,7 +104,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
 }
 
 impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    BaseFieldEccChip<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+BaseFieldEccChip<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Expose `AssignedPoint` as Public Input
     pub fn expose_public(
@@ -358,7 +358,7 @@ mod tests {
         ff::{Field, FromUniformBytes, PrimeField},
         group::{Curve as _, Group},
     };
-    use halo2::plonk::{Circuit, ConstraintSystem, Error};
+    use halo2::plonk::{Circuit, ConstraintSystem};
     use integer::maingate::RegionCtx;
     use maingate::mock_prover_verify;
     use maingate::{
@@ -426,7 +426,7 @@ mod tests {
         fn config_range<N: PrimeField>(
             &self,
             layouter: &mut impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -457,7 +457,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<C::Scalar>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let ecc_chip_config = config.ecc_chip_config();
             let ecc_chip =
                 BaseFieldEccChip::<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(ecc_chip_config);
@@ -551,7 +551,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<C::Scalar>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let ecc_chip_config = config.ecc_chip_config();
             let ecc_chip =
                 BaseFieldEccChip::<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(ecc_chip_config);
@@ -648,7 +648,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<C::Scalar>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let ecc_chip_config = config.ecc_chip_config();
             let mut ecc_chip =
                 BaseFieldEccChip::<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(ecc_chip_config);
@@ -741,7 +741,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<C::Scalar>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let ecc_chip_config = config.ecc_chip_config();
             let mut ecc_chip =
                 BaseFieldEccChip::<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(ecc_chip_config);

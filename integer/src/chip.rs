@@ -596,7 +596,8 @@ mod tests {
     use crate::rns::{Common, Integer, Rns};
     use crate::{PrimeField, UnassignedInteger};
     use halo2::circuit::{Layouter, SimpleFloorPlanner, Value};
-    use halo2::plonk::{Circuit, ConstraintSystem, Error};
+    use halo2::plonk::{Circuit, ConstraintSystem};
+    use maingate::halo2::plonk::ErrorFront;
     use maingate::mock_prover_verify;
     use maingate::{
         big_to_fe, decompose_big, fe_to_big, halo2, AssignedCondition, MainGate, MainGateConfig,
@@ -747,7 +748,7 @@ mod tests {
         fn config_range<N: PrimeField>(
             &self,
             layouter: &mut impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -800,7 +801,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
 
@@ -832,7 +833,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
 
@@ -872,7 +873,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
 
@@ -901,7 +902,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
 
@@ -975,7 +976,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
 
@@ -1022,7 +1023,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
 
@@ -1052,7 +1053,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<N>::new(config.main_gate_config.clone());
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
@@ -1166,7 +1167,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
             layouter.assign_region(
@@ -1400,7 +1401,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<N>::new(config.main_gate_config.clone());
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
@@ -1486,7 +1487,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<N>::new(config.main_gate_config.clone());
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();
@@ -1528,7 +1529,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<N>::new(config.main_gate_config.clone());
             let integer_chip = self.integer_chip(config.clone());
             let t = self.tester();

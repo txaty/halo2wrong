@@ -528,9 +528,10 @@ mod tests {
     use crate::curves::{ff::PrimeField, pasta::Fp};
     use crate::halo2::circuit::{Layouter, SimpleFloorPlanner, Value};
     use crate::halo2::dev::MockProver;
-    use crate::halo2::plonk::{Circuit, ConstraintSystem, Error};
+    use crate::halo2::plonk::{Circuit, ConstraintSystem};
     use crate::main_gate::{CombinationOptionCommon, MainGateInstructions};
     use crate::AssignedCondition;
+    use halo2wrong::halo2::plonk::ErrorFront;
     use halo2wrong::utils::{big_to_fe, decompose};
     use halo2wrong::RegionCtx;
     use rand_core::OsRng;
@@ -575,7 +576,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = config.main_gate();
 
             let value = layouter.assign_region(
@@ -634,7 +635,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = config.main_gate();
 
             let rand = || -> F { F::random(OsRng) };
@@ -912,7 +913,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = config.main_gate();
 
             layouter.assign_region(
@@ -994,7 +995,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = config.main_gate();
 
             layouter.assign_region(
@@ -1113,7 +1114,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = config.main_gate();
 
             let rand = || -> F { F::random(OsRng) };
@@ -1263,7 +1264,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<F> {
                 config: config.main_gate_config,
                 _marker: PhantomData,
@@ -1380,7 +1381,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<F> {
                 config: config.main_gate_config,
                 _marker: PhantomData,
@@ -1474,7 +1475,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<F> {
                 config: config.main_gate_config,
                 _marker: PhantomData,
@@ -1545,7 +1546,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<F> {
                 config: config.main_gate_config,
                 _marker: PhantomData,

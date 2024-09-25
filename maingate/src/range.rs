@@ -385,13 +385,14 @@ impl<F: PrimeField> RangeChip<F> {
 mod tests {
     use halo2wrong::halo2::arithmetic::Field;
     use halo2wrong::halo2::circuit::Value;
+    use halo2wrong::halo2::plonk::ErrorFront;
     use halo2wrong::RegionCtx;
 
     use super::{RangeChip, RangeConfig, RangeInstructions};
     use crate::curves::{ff::PrimeField, pasta::Fp};
     use crate::halo2::circuit::{Layouter, SimpleFloorPlanner};
     use crate::halo2::dev::MockProver;
-    use crate::halo2::plonk::{Circuit, ConstraintSystem, Error};
+    use crate::halo2::plonk::{Circuit, ConstraintSystem};
     use crate::main_gate::MainGate;
     use crate::{MainGateInstructions, Term};
 
@@ -470,7 +471,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let range_chip = config.range_chip();
             let main_gate = config.main_gate();
 

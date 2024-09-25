@@ -1,7 +1,8 @@
 use crate::{
-    halo2::{halo2curves::ff::PrimeField, plonk::Error},
+    halo2::halo2curves::ff::PrimeField,
     maingate::{AssignedValue, MainGate, MainGateConfig, MainGateInstructions, RegionCtx, Term},
 };
+use ecc::halo2::plonk::ErrorFront;
 use poseidon::{SparseMDSMatrix, Spec, State};
 
 /// `AssignedState` is composed of `T` sized assigned values
@@ -38,14 +39,14 @@ impl<
         ctx: &mut RegionCtx<'_, F>,
         spec: &Spec<F, T, RATE>,
         main_gate_config: &MainGateConfig,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, ErrorFront> {
         let main_gate = MainGate::<_>::new(main_gate_config.clone());
 
         let initial_state = State::<_, T>::default()
             .words()
             .iter()
             .map(|word| main_gate.assign_constant(ctx, *word))
-            .collect::<Result<Vec<AssignedValue<F>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<F>>, ErrorFront>>()?;
 
         Ok(Self {
             state: AssignedState(initial_state.try_into().unwrap()),
@@ -117,7 +118,11 @@ impl<
     > HasherChip<F, NUMBER_OF_LIMBS, BIT_LEN, T, RATE>
 {
     /// Applies full state sbox then adds constants to each word in the state
-    fn sbox_full(&mut self, ctx: &mut RegionCtx<'_, F>, constants: &[F; T]) -> Result<(), Error> {
+    fn sbox_full(
+        &mut self,
+        ctx: &mut RegionCtx<'_, F>,
+        constants: &[F; T],
+    ) -> Result<(), ErrorFront> {
         let main_gate = self.main_gate();
         for (word, constant) in self.state.0.iter_mut().zip(constants.iter()) {
             let t = main_gate.mul(ctx, word, word)?;
@@ -129,7 +134,7 @@ impl<
 
     /// Applies sbox to the first word then adds constants to each word in the
     /// state
-    fn sbox_part(&mut self, ctx: &mut RegionCtx<'_, F>, constant: F) -> Result<(), Error> {
+    fn sbox_part(&mut self, ctx: &mut RegionCtx<'_, F>, constant: F) -> Result<(), ErrorFront> {
         let main_gate = self.main_gate();
         let word = &mut self.state.0[0];
         let t = main_gate.mul(ctx, word, word)?;
@@ -149,7 +154,7 @@ impl<
         // * inputs size is 0: extra permutation to avoid collution
         inputs: Vec<AssignedValue<F>>,
         pre_constants: &[F; T],
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         assert!(inputs.len() < T);
         let offset = inputs.len() + 1;
         let main_gate = self.main_gate();
@@ -196,7 +201,11 @@ impl<
     }
 
     /// Applies MDS State multiplication
-    fn apply_mds(&mut self, ctx: &mut RegionCtx<'_, F>, mds: &[[F; T]; T]) -> Result<(), Error> {
+    fn apply_mds(
+        &mut self,
+        ctx: &mut RegionCtx<'_, F>,
+        mds: &[[F; T]; T],
+    ) -> Result<(), ErrorFront> {
         // Calculate new state
         let new_state = mds
             .iter()
@@ -212,7 +221,7 @@ impl<
 
                 self.main_gate().compose(ctx, &terms[..], F::ZERO)
             })
-            .collect::<Result<Vec<AssignedValue<F>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<F>>, ErrorFront>>()?;
 
         // Assign new state
         for (word, new_word) in self.state.0.iter_mut().zip(new_state.into_iter()) {
@@ -227,7 +236,7 @@ impl<
         &mut self,
         ctx: &mut RegionCtx<'_, F>,
         mds: &SparseMDSMatrix<F, T, RATE>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         // For the 0th word
         let terms = self
             .state
@@ -263,7 +272,7 @@ impl<
         &mut self,
         ctx: &mut RegionCtx<'_, F>,
         inputs: Vec<AssignedValue<F>>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let r_f = self.r_f_half();
         let mds = self.mds();
         let pre_sparse_mds = self.pre_sparse_mds();
@@ -298,7 +307,7 @@ impl<
         Ok(())
     }
 
-    pub fn hash(&mut self, ctx: &mut RegionCtx<'_, F>) -> Result<AssignedValue<F>, Error> {
+    pub fn hash(&mut self, ctx: &mut RegionCtx<'_, F>) -> Result<AssignedValue<F>, ErrorFront> {
         // Get elements to be hashed
         let input_elements = self.absorbing.clone();
         // Flush the input que

@@ -1,10 +1,10 @@
 use crate::{
-    halo2::{arithmetic::CurveAffine, halo2curves::ff::PrimeField, plonk::Error},
+    halo2::{arithmetic::CurveAffine, halo2curves::ff::PrimeField},
     hasher::HasherChip,
     maingate::{AssignedValue, RegionCtx},
 };
 use ecc::{
-    halo2::circuit::Chip,
+    halo2::{circuit::Chip, plonk::ErrorFront},
     maingate::{big_to_fe, decompose, fe_to_big},
     AssignedPoint, BaseFieldEccChip,
 };
@@ -22,7 +22,7 @@ pub trait PointRepresentation<
         ctx: &mut RegionCtx<'_, N>,
         ecc_chip: &BaseFieldEccChip<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         point: &AssignedPoint<C::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<Vec<AssignedValue<N>>, Error>;
+    ) -> Result<Vec<AssignedValue<N>>, ErrorFront>;
 
     /// Returns `None` if `point` is identity
     fn encode(point: C) -> Option<Vec<N>>;
@@ -43,7 +43,7 @@ impl<
         ctx: &mut RegionCtx<'_, N>,
         ecc_chip: &BaseFieldEccChip<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         point: &AssignedPoint<C::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<Vec<AssignedValue<N>>, Error> {
+    ) -> Result<Vec<AssignedValue<N>>, ErrorFront> {
         let mut encoded: Vec<AssignedValue<N>> =
             point.x().limbs().iter().map(|limb| limb.into()).collect();
         encoded.push(ecc_chip.sign(ctx, point)?);
@@ -79,7 +79,7 @@ impl<
         _: &mut RegionCtx<'_, N>,
         _: &BaseFieldEccChip<C, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         point: &AssignedPoint<C::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<Vec<AssignedValue<N>>, Error> {
+    ) -> Result<Vec<AssignedValue<N>>, ErrorFront> {
         Ok(vec![point.x().native().clone(), point.y().native().clone()])
     }
 
@@ -127,7 +127,7 @@ impl<
         spec: &Spec<N, T, RATE>,
         ecc_chip: BaseFieldEccChip<C, NUMBER_OF_LIMBS, BIT_LEN>,
         _point_repr: E,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, ErrorFront> {
         let main_gate = ecc_chip.main_gate();
         let main_gate_config = main_gate.config();
         let hasher_chip = HasherChip::new(ctx, spec, main_gate_config)?;
@@ -148,14 +148,14 @@ impl<
         &mut self,
         ctx: &mut RegionCtx<'_, N>,
         point: &AssignedPoint<C::Base, N, NUMBER_OF_LIMBS, BIT_LEN>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let encoded = E::encode_assigned(ctx, &self.ecc_chip, point)?;
         self.hasher_chip.update(&encoded[..]);
         Ok(())
     }
 
     // Constrain squeezing new challenge
-    pub fn squeeze(&mut self, ctx: &mut RegionCtx<'_, N>) -> Result<AssignedValue<N>, Error> {
+    pub fn squeeze(&mut self, ctx: &mut RegionCtx<'_, N>) -> Result<AssignedValue<N>, ErrorFront> {
         self.hasher_chip.hash(ctx)
     }
 }
@@ -165,7 +165,6 @@ mod tests {
     use crate::halo2::circuit::Layouter;
     use crate::halo2::circuit::SimpleFloorPlanner;
     use crate::halo2::halo2curves::ff::{Field, PrimeField};
-    use crate::halo2::plonk::Error;
     use crate::halo2::plonk::{Circuit, ConstraintSystem};
     use crate::maingate::mock_prover_verify;
     use crate::maingate::MainGate;
@@ -175,6 +174,7 @@ mod tests {
     use crate::TranscriptChip;
     use ecc::halo2::arithmetic::CurveAffine;
     use ecc::halo2::circuit::Value;
+    use ecc::halo2::plonk::ErrorFront;
     use ecc::integer::rns::Rns;
     use ecc::maingate::RangeChip;
     use ecc::maingate::RangeConfig;
@@ -222,7 +222,7 @@ mod tests {
         fn config_range<N: PrimeField>(
             &self,
             layouter: &mut impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -257,7 +257,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<C::Scalar>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let main_gate = MainGate::<C::Scalar>::new(config.main_gate_config.clone());
             let ecc_chip_config = config.ecc_chip_config();
             let ecc_chip =

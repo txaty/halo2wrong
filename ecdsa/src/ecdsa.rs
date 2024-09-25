@@ -6,8 +6,8 @@ use ecc::halo2::plonk::ErrorFront;
 use ecc::maingate::RegionCtx;
 use ecc::{AssignedPoint, EccConfig, GeneralEccChip};
 use halo2::arithmetic::CurveAffine;
-use halo2::halo2curves::ff::PrimeField;
 use halo2::circuit::Value;
+use halo2::halo2curves::ff::PrimeField;
 use integer::rns::Integer;
 use integer::{AssignedInteger, IntegerInstructions};
 use maingate::{MainGateConfig, RangeConfig};
@@ -358,4 +358,39 @@ mod tests {
         run::<Secp256k1, PastaFp>();
         run::<Secp256k1, PastaFq>();
     }
+
+    // #[test]
+    // fn plot_circuit_layout() {
+    //     let aux_generator = <Secp256k1Affine as CurveAffine>::CurveExt::random(OsRng).to_affine();
+    //     use crate::curves::bn256::Fr as BnScalar;
+    //     let circuit = TestCircuitEcdsaVerify::<Secp256k1Affine, BnScalar> {
+    //         public_key: Value::unknown(),
+    //         signature: Value::unknown(),
+    //         msg_hash: Value::unknown(),
+    //         aux_generator,
+    //         window_size: 4,
+    //         ..Default::default()
+    //     };
+    //     // let instance = vec![vec![]];
+    //     use halo2wrong::plotters::prelude::*;
+    //
+    //     let root = BitMapBackend::new("signature layout.png", (1024, 65536)).into_drawing_area();
+    //     root.fill(&WHITE).unwrap();
+    //     let root = root
+    //         .titled("Example Circuit Layout", ("sans-serif", 60))
+    //         .unwrap();
+    //
+    //     halo2wrong::halo2_frontend::dev::CircuitLayout::default()
+    //         // You can optionally render only a section of the circuit.
+    //         .view_width(0..32)
+    //         .view_height(0..65536)
+    //         // You can hide labels, which can be useful with smaller areas.
+    //         .show_labels(true)
+    //         .mark_equality_cells(true)
+    //         .show_equality_constraints(true)
+    //         // Render the circuit onto your area!
+    //         // The first argument is the size parameter for the circuit.
+    //         .render(17, &circuit, &root)
+    //         .unwrap();
+    // }
 }

@@ -151,7 +151,12 @@ impl<F: PrimeField> Assignment<F> for DimensionMeasurement {
         Value::unknown()
     }
 
-    fn enable_selector<A, AR>(&mut self, _: A, _: &Selector, offset: usize) -> Result<(), ErrorFront>
+    fn enable_selector<A, AR>(
+        &mut self,
+        _: A,
+        _: &Selector,
+        offset: usize,
+    ) -> Result<(), ErrorFront>
     where
         A: FnOnce() -> AR,
         AR: Into<String>,
@@ -283,7 +288,7 @@ fn test_bit_decomposition() {
 fn test_dimension_measurement() {
     use halo2::{
         circuit::{floor_planner::V1, Layouter, Value},
-        plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Fixed, Instance},
+        plonk::{Advice, Circuit, Column, ConstraintSystem, Fixed, Instance},
     };
     use std::marker::PhantomData;
 
@@ -312,7 +317,7 @@ fn test_dimension_measurement() {
             &self,
             (i0, f0, [a0, a1]): Self::Config,
             mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             layouter.assign_region(
                 || "",
                 |mut region| {
