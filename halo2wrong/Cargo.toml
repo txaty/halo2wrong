@@ -9,11 +9,29 @@ num-bigint = { version = "0.4", features = ["rand"] }
 num-integer = "0.1"
 num-traits = "0.2"
 halo2 = { package = "halo2_proofs", git = "https://github.com/txaty/halo2", branch = "sublonk-multi-row" }
+halo2_frontend = { git = "https://github.com/txaty/halo2", branch = "sublonk-multi-row" }
+halo2_backend = { git = "https://github.com/txaty/halo2", branch = "sublonk-multi-row" }
+plotters = { version = "0.3.0", default-features = false, optional = true }
+
 
 [dev-dependencies]
 rand = "0.8"
 rand_core = { version = "0.6", default-features = false }
 
 [features]
-default = []
-circuit-params = ["halo2/circuit-params"]
+default = ["batch", "halo2_frontend/default", "halo2_backend/default"]
+dev-graph = ["halo2_frontend/dev-graph", "plotters"]
+test-dev-graph = [
+    "halo2_frontend/test-dev-graph",
+    "dev-graph",
+    "plotters/bitmap_backend",
+    "plotters/bitmap_encoder",
+    "plotters/ttf"
+]
+gadget-traces = ["halo2_frontend/gadget-traces"]
+thread-safe-region = ["halo2_frontend/thread-safe-region"]
+sanity-checks = ["halo2_backend/sanity-checks"]
+batch = ["rand_core/getrandom", "halo2_backend/batch"]
+circuit-params = ["halo2_frontend/circuit-params"]
+heap-profiling = ["halo2_frontend/heap-profiling"]
+cost-estimator = ["halo2_frontend/cost-estimator"]
