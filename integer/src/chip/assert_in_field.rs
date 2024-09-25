@@ -1,18 +1,18 @@
 use super::{IntegerChip, Range};
+use crate::halo2::plonk::ErrorFront;
 use crate::{AssignedInteger, PrimeField};
-use halo2::plonk::Error;
 use maingate::{
-    halo2, AssignedValue, CombinationOptionCommon, MainGateInstructions, RegionCtx, Term,
+    AssignedValue, CombinationOptionCommon, MainGateInstructions, RegionCtx, Term,
 };
 
 impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn assert_in_field_generic(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         input: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         // Constraints for `NUMBER_OF_LIMBS = 4`
         // 0 = -c_0 + p_0 - a_0 + b_0 * R
         // 0 = -c_1 + p_1 - a_1 + b_1 * R - b_0
@@ -38,7 +38,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 let b_i = borrow.map(|borrow| if borrow[i] { N::ONE } else { N::ZERO });
                 main_gate.assign_bit(ctx, b_i)
             })
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         let left_shifter = self.rns.left_shifter(1);
         let one = N::ONE;

@@ -1,13 +1,13 @@
 use super::{IntegerChip, IntegerInstructions, Range};
+use crate::halo2::plonk::ErrorFront;
 use crate::{rns::Integer, AssignedInteger, PrimeField};
-use halo2::plonk::Error;
 use maingate::{
-    halo2, AssignedCondition, CombinationOptionCommon, MainGateInstructions, RegionCtx, Term,
+    AssignedCondition, CombinationOptionCommon, MainGateInstructions, RegionCtx, Term,
 };
 use std::rc::Rc;
 
 impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn invert_generic(
         &self,
@@ -18,7 +18,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
             AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
             AssignedCondition<N>,
         ),
-        Error,
+        ErrorFront,
     > {
         let main_gate = self.main_gate();
 
@@ -75,7 +75,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let a_int = a.integer();
         let inv = a_int.map(|a| {
             a.invert().unwrap_or_else(|| {

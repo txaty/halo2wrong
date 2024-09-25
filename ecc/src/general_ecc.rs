@@ -1,12 +1,12 @@
 use super::{make_mul_aux, AssignedPoint, EccConfig, MulAux, Point};
 use crate::halo2;
+use crate::halo2::plonk::ErrorFront;
 use crate::integer::rns::{Integer, Rns};
 use crate::integer::{IntegerChip, IntegerInstructions, Range, UnassignedInteger};
 use crate::maingate;
 use halo2::arithmetic::CurveAffine;
 use halo2::circuit::{Layouter, Value};
 use halo2::halo2curves::ff::PrimeField;
-use halo2::plonk::Error;
 use integer::maingate::RegionCtx;
 use maingate::{AssignedCondition, MainGate};
 use std::collections::BTreeMap;
@@ -141,15 +141,15 @@ impl<
         &self,
         window_size: usize,
         number_of_pairs: usize,
-    ) -> Result<MulAux<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<MulAux<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         // Gets chips' aux generator
         let to_add = match self.aux_generator.clone() {
             Some((assigned, _)) => Ok(assigned),
-            None => Err(Error::Synthesis),
+            None => Err(ErrorFront::Synthesis),
         }?;
         let to_sub = match self.aux_registry.get(&(window_size, number_of_pairs)) {
             Some(aux) => Ok(aux.clone()),
-            None => Err(Error::Synthesis),
+            None => Err(ErrorFront::Synthesis),
         }?;
         // to_add the equivalent of AuxInit and to_sub AuxFin
         // see https://hackmd.io/ncuKqRXzR-Cw-Au2fGzsMg?view
@@ -170,7 +170,7 @@ impl<
         mut layouter: impl Layouter<N>,
         point: AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         offset: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         use integer::maingate::MainGateInstructions;
         let main_gate = self.main_gate();
 
@@ -192,7 +192,7 @@ impl<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         point: Emulated,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let coords = point.coordinates();
         // disallow point of infinity
         let coords = coords.unwrap();
@@ -208,7 +208,7 @@ impl<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         point: Value<Emulated>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.base_field_chip();
 
         let point = point.map(|point| self.to_rns_point(point));
@@ -229,7 +229,7 @@ impl<
         &mut self,
         ctx: &mut RegionCtx<'_, N>,
         aux_generator: Value<Emulated>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let aux_generator_assigned = self.assign_point(ctx, aux_generator)?;
         self.aux_generator = Some((aux_generator_assigned, aux_generator));
         Ok(())
@@ -242,7 +242,7 @@ impl<
         ctx: &mut RegionCtx<'_, N>,
         window_size: usize,
         number_of_pairs: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         match self.aux_generator {
             Some((_, point)) => {
                 let aux = point.map(|point| make_mul_aux(point, window_size, number_of_pairs));
@@ -252,7 +252,7 @@ impl<
                 Ok(())
             }
             // aux generator is not assigned yet
-            None => Err(Error::Synthesis),
+            None => Err(ErrorFront::Synthesis),
         }
     }
 
@@ -261,7 +261,7 @@ impl<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         point: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let integer_chip = self.base_field_chip();
 
         let y_square = &integer_chip.square(ctx, point.y())?;
@@ -278,7 +278,7 @@ impl<
         ctx: &mut RegionCtx<'_, N>,
         p0: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         p1: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let integer_chip = self.base_field_chip();
         integer_chip.assert_equal(ctx, p0.x(), p1.x())?;
         integer_chip.assert_equal(ctx, p0.y(), p1.y())
@@ -291,7 +291,7 @@ impl<
         c: &AssignedCondition<N>,
         p1: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         p2: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.base_field_chip();
         let x = integer_chip.select(ctx, p1.x(), p2.x(), c)?;
         let y = integer_chip.select(ctx, p1.y(), p2.y(), c)?;
@@ -306,7 +306,7 @@ impl<
         c: &AssignedCondition<N>,
         p1: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         p2: Emulated,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.base_field_chip();
         let p2 = self.to_rns_point(p2);
         let x = integer_chip.select_or_assign(ctx, p1.x(), p2.x(), c)?;
@@ -319,7 +319,7 @@ impl<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         point: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.base_field_chip();
         let x = integer_chip.reduce(ctx, point.x())?;
         let y = integer_chip.reduce(ctx, point.y())?;
@@ -332,7 +332,7 @@ impl<
         ctx: &mut RegionCtx<'_, N>,
         p0: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         p1: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         // guarantees that p0 != p1 or p0 != p1
         // so that we can use unsafe addition formula which assumes operands are not
         // equal addition to that we strictly disallow addition result to be
@@ -348,7 +348,7 @@ impl<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         p: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         // point must be asserted to be in curve and not infinity
         self._double_incomplete(ctx, p)
     }
@@ -359,7 +359,7 @@ impl<
         ctx: &mut RegionCtx<'_, N>,
         p: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         logn: usize,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let mut acc = p.clone();
         for _ in 0..logn {
             acc = self._double_incomplete(ctx, &acc)?;
@@ -374,7 +374,7 @@ impl<
         ctx: &mut RegionCtx<'_, N>,
         to_double: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         to_add: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         self._ladder_incomplete(ctx, to_double, to_add)
     }
 
@@ -383,7 +383,7 @@ impl<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         p: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.base_field_chip();
         let y_neg = integer_chip.neg(ctx, p.y())?;
         Ok(AssignedPoint::new(p.x().clone(), y_neg))
@@ -407,7 +407,7 @@ mod tests {
     use crate::maingate;
     use halo2::arithmetic::CurveAffine;
     use halo2::circuit::{Layouter, SimpleFloorPlanner, Value};
-    use halo2::plonk::{Circuit, ConstraintSystem, Error};
+    use halo2::plonk::{Circuit, ConstraintSystem};
     use integer::rns::Integer;
     use integer::Range;
     use maingate::mock_prover_verify;
@@ -422,6 +422,7 @@ mod tests {
         EpAffine as Pallas, EqAffine as Vesta, Fp as PastaFp, Fq as PastaFq,
     };
     use crate::curves::secp256k1::Secp256k1Affine as Secp256k1;
+    use crate::halo2::plonk::ErrorFront;
 
     const NUMBER_OF_LIMBS: usize = 4;
     const BIT_LEN_LIMB: usize = 68;
@@ -497,7 +498,7 @@ mod tests {
         fn config_range<N: PrimeField>(
             &self,
             layouter: &mut impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -539,7 +540,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let ecc_chip_config = config.ecc_chip_config();
             let ecc_chip =
                 GeneralEccChip::<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(ecc_chip_config);
@@ -660,7 +661,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let ecc_chip_config = config.ecc_chip_config();
             let ecc_chip =
                 GeneralEccChip::<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(ecc_chip_config);
@@ -715,10 +716,10 @@ mod tests {
             let a = C::Curve::random(OsRng).to_affine();
             let b = C::Curve::random(OsRng).to_affine();
 
-            let c0: C = (a + b).into();
+            let c0: C = (a.clone() + b.clone()).into();
             let c0 = Point::new(Rc::clone(&rns_base), c0);
             let mut public_data = c0.public();
-            let c1: C = (a + a).into();
+            let c1: C = (a.clone() + a.clone()).into();
             let c1 = Point::new(Rc::clone(&rns_base), c1);
             public_data.extend(c1.public());
             let circuit = TestEccPublicInput::<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB> {
@@ -783,7 +784,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let ecc_chip_config = config.ecc_chip_config();
             let mut ecc_chip =
                 GeneralEccChip::<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(ecc_chip_config);
@@ -910,7 +911,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let ecc_chip_config = config.ecc_chip_config();
             let mut ecc_chip =
                 GeneralEccChip::<C, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(ecc_chip_config);
@@ -953,7 +954,7 @@ mod tests {
                             )?;
                             Ok((base, s))
                         })
-                        .collect::<Result<_, Error>>()?;
+                        .collect::<Result<_, ErrorFront>>()?;
 
                     let result_0 = ecc_chip.assign_point(ctx, Value::known(acc.into()))?;
                     let result_1 =

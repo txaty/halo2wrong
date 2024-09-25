@@ -9,6 +9,7 @@ use crate::{
         },
     },
 };
+use halo2::plonk::ErrorFront;
 use num_bigint::BigUint as big_uint;
 use num_traits::{Num, One, Zero};
 use std::{
@@ -114,7 +115,7 @@ impl DimensionMeasurement {
     fn update<C: Into<Any>>(&self, column: C, offset: usize) {
         let mut target = match column.into() {
             Any::Instance => self.instance.borrow_mut(),
-            Any::Advice(_advice) => self.advice.borrow_mut(),
+            Any::Advice => self.advice.borrow_mut(),
             Any::Fixed => self.fixed.borrow_mut(),
         };
         if offset as u64 > *target {
@@ -150,7 +151,7 @@ impl<F: PrimeField> Assignment<F> for DimensionMeasurement {
         Value::unknown()
     }
 
-    fn enable_selector<A, AR>(&mut self, _: A, _: &Selector, offset: usize) -> Result<(), Error>
+    fn enable_selector<A, AR>(&mut self, _: A, _: &Selector, offset: usize) -> Result<(), ErrorFront>
     where
         A: FnOnce() -> AR,
         AR: Into<String>,
@@ -159,7 +160,7 @@ impl<F: PrimeField> Assignment<F> for DimensionMeasurement {
         Ok(())
     }
 
-    fn query_instance(&self, _: Column<Instance>, offset: usize) -> Result<Value<F>, Error> {
+    fn query_instance(&self, _: Column<Instance>, offset: usize) -> Result<Value<F>, ErrorFront> {
         self.update(Instance, offset);
         Ok(Value::unknown())
     }
@@ -178,14 +179,14 @@ impl<F: PrimeField> Assignment<F> for DimensionMeasurement {
         _: Column<Advice>,
         offset: usize,
         _: V,
-    ) -> Result<(), Error>
+    ) -> Result<(), ErrorFront>
     where
         V: FnOnce() -> Value<VR>,
         VR: Into<Assigned<F>>,
         A: FnOnce() -> AR,
         AR: Into<String>,
     {
-        self.update(Any::advice(), offset);
+        self.update(Any::Advice, offset);
         Ok(())
     }
 
@@ -195,7 +196,7 @@ impl<F: PrimeField> Assignment<F> for DimensionMeasurement {
         _: Column<Fixed>,
         offset: usize,
         _: V,
-    ) -> Result<(), Error>
+    ) -> Result<(), ErrorFront>
     where
         V: FnOnce() -> Value<VR>,
         VR: Into<Assigned<F>>,
@@ -212,7 +213,7 @@ impl<F: PrimeField> Assignment<F> for DimensionMeasurement {
         offset_lhs: usize,
         rhs: Column<Any>,
         offset_rhs: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         self.update(*lhs.column_type(), offset_lhs);
         self.update(*rhs.column_type(), offset_rhs);
         Ok(())
@@ -223,7 +224,7 @@ impl<F: PrimeField> Assignment<F> for DimensionMeasurement {
         _: Column<Fixed>,
         offset: usize,
         _: Value<Assigned<F>>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         self.update(Fixed, offset);
         Ok(())
     }

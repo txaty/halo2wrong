@@ -1,9 +1,9 @@
 use super::{AssignedPoint, BaseFieldEccChip};
+use crate::halo2::plonk::ErrorFront;
 use crate::maingate::{AssignedCondition, AssignedValue, MainGateInstructions};
 use crate::{halo2, Selector, Table, Windowed};
 use halo2::arithmetic::CurveAffine;
 use halo2::halo2curves::ff::{Field, PrimeField};
-use halo2::plonk::Error;
 use integer::maingate::RegionCtx;
 
 impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
@@ -15,7 +15,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         bits: &mut Vec<AssignedCondition<C::Scalar>>,
         window_size: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         assert_eq!(bits.len(), C::Scalar::NUM_BITS as usize);
 
         // TODO: This is a tmp workaround. Instead of padding with zeros we can use a
@@ -23,7 +23,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         let padding_offset = (window_size - (bits.len() % window_size)) % window_size;
         let zeros: Vec<AssignedCondition<C::Scalar>> = (0..padding_offset)
             .map(|_| self.main_gate().assign_constant(ctx, C::Scalar::ZERO))
-            .collect::<Result<_, Error>>()?;
+            .collect::<Result<_, ErrorFront>>()?;
         bits.extend(zeros);
         bits.reverse();
 
@@ -56,7 +56,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         aux: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         point: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         window_size: usize,
-    ) -> Result<Table<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<Table<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let table_size = 1 << window_size;
         let mut table = vec![aux.clone()];
         for i in 0..(table_size - 1) {
@@ -71,7 +71,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         selector: &Selector<C::Scalar>,
         table: &Table<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let number_of_points = table.0.len();
         let number_of_selectors = selector.0.len();
         assert_eq!(number_of_points, 1 << number_of_selectors);
@@ -95,7 +95,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         point: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         scalar: &AssignedValue<C::Scalar>,
         window_size: usize,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         assert!(window_size > 0);
         let aux = self.get_mul_aux(window_size, 1)?;
 
@@ -136,7 +136,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
             AssignedValue<C::Scalar>,
         )>,
         window_size: usize,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         assert!(window_size > 0);
         assert!(!pairs.is_empty());
         let aux = self.get_mul_aux(window_size, pairs.len())?;
@@ -146,7 +146,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         let mut decomposed_scalars: Vec<Vec<AssignedCondition<C::Scalar>>> = pairs
             .iter()
             .map(|(_, scalar)| main_gate.to_bits(ctx, scalar, C::Scalar::NUM_BITS as usize))
-            .collect::<Result<_, Error>>()?;
+            .collect::<Result<_, ErrorFront>>()?;
 
         for decomposed in decomposed_scalars.iter_mut() {
             self.pad(ctx, decomposed, window_size)?;
@@ -169,7 +169,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
                 }
                 table
             })
-            .collect::<Result<_, Error>>()?;
+            .collect::<Result<_, ErrorFront>>()?;
 
         // preparation for the first round
         // initialize accumulator

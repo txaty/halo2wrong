@@ -1,8 +1,8 @@
 use super::AssignedPoint;
 use super::BaseFieldEccChip;
 use crate::halo2;
+use crate::halo2::plonk::ErrorFront;
 use halo2::arithmetic::CurveAffine;
-use halo2::plonk::Error;
 use integer::maingate::RegionCtx;
 use integer::IntegerInstructions;
 
@@ -19,7 +19,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         a: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let ch = self.integer_chip();
 
         // lambda = b_y - a_y / b_x - a_x
@@ -48,7 +48,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         point: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.integer_chip();
 
         // lambda = (3 * a_x^2) / 2 * a_y
@@ -77,7 +77,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         to_double: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         to_add: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let ch = self.integer_chip();
 
         // (P + Q) + P

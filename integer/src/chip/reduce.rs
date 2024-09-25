@@ -1,11 +1,11 @@
 use super::{IntegerChip, IntegerInstructions, Range};
+use crate::halo2::plonk::ErrorFront;
 use crate::rns::MaybeReduced;
 use crate::{AssignedInteger, PrimeField};
-use halo2::plonk::Error;
-use maingate::{halo2, AssignedValue, MainGateInstructions, RangeInstructions, RegionCtx, Term};
+use maingate::{AssignedValue, MainGateInstructions, RangeInstructions, RegionCtx, Term};
 
 impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     /// Reduces an [`AssignedInteger`] if any of its limbs values is greater
     /// than the [`Rns`] `max_unreduced_limb`.
@@ -16,7 +16,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let exceeds_max_limb_value = a
             .limbs
             .iter()
@@ -46,7 +46,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let exceeds_max_limb_value = a
             .limbs
             .iter()
@@ -64,7 +64,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let exceeds_max_value = a.max_val() > self.rns.max_operand;
         if exceeds_max_value {
             self.reduce(ctx, a)
@@ -77,7 +77,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
         let (zero, one) = (N::ZERO, N::ONE);
 
@@ -94,7 +94,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
             .residues()
             .iter()
             .map(|v| range_chip.assign(ctx, *v, Self::sublimb_bit_len(), self.rns.red_v_bit_len))
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         // Assign intermediate values
         let t: Vec<AssignedValue<N>> = a
@@ -111,7 +111,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                     zero,
                 )
             })
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         // Constrain binary part of crt
         self.constrain_binary_crt(

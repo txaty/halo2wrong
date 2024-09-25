@@ -2,11 +2,11 @@
 //! gate. While many of implmentations takes place here they can be overriden
 //! for optimisation purposes.
 
+use crate::halo2::plonk::ErrorFront;
 use crate::{
     halo2::{
         arithmetic::Field,
         circuit::{Chip, Layouter, Value},
-        plonk::Error,
     },
     AssignedCondition, AssignedValue, ColumnTags, MainGateColumn,
 };
@@ -161,7 +161,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         layouter: impl Layouter<F>,
         value: AssignedValue<F>,
         row: usize,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constrain a witness to be equal to a fixed value. This should allow us
     /// to move a fixed value around
@@ -169,7 +169,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         constant: F,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let e = self
             .apply(
                 ctx,
@@ -187,7 +187,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         unassigned: Value<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         self.assign_to_column(ctx, unassigned, Self::MainGateColumn::first())
     }
 
@@ -196,7 +196,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         unassigned: Value<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         self.assign_to_column(ctx, unassigned, Self::MainGateColumn::next())
     }
 
@@ -206,7 +206,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         value: Value<F>,
         column: Self::MainGateColumn,
-    ) -> Result<AssignedValue<F>, Error>;
+    ) -> Result<AssignedValue<F>, ErrorFront>;
 
     /// Assigns given value and enforces that the value is `0` or `1`
     /// `val * val - val  = 0`
@@ -214,7 +214,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         bit: Value<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let mut assigned = self.apply(
             ctx,
             [
@@ -238,7 +238,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         bit: &AssignedCondition<F>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let assigned = self.apply(
             ctx,
             [
@@ -263,7 +263,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedCondition<F>,
         b: &AssignedCondition<F>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         self.apply(
             ctx,
             [Term::assigned_to_sub(a), Term::assigned_to_sub(b)],
@@ -282,7 +282,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         c1: &AssignedCondition<F>,
         c2: &AssignedCondition<F>,
-    ) -> Result<AssignedCondition<F>, Error> {
+    ) -> Result<AssignedCondition<F>, ErrorFront> {
         // Find the new witness
         let c = c1
             .value()
@@ -312,7 +312,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         c1: &AssignedCondition<F>,
         c2: &AssignedCondition<F>,
-    ) -> Result<AssignedCondition<F>, Error> {
+    ) -> Result<AssignedCondition<F>, ErrorFront> {
         // Find the new witness
         let c = c1.value().zip(c2.value()).map(|(c1, c2)| *c1 * *c2);
 
@@ -337,7 +337,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         c1: &AssignedCondition<F>,
         c2: &AssignedCondition<F>,
-    ) -> Result<AssignedCondition<F>, Error> {
+    ) -> Result<AssignedCondition<F>, ErrorFront> {
         // Find the new witness
         let result = c1
             .value()
@@ -367,7 +367,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         c: &AssignedCondition<F>,
-    ) -> Result<AssignedCondition<F>, Error> {
+    ) -> Result<AssignedCondition<F>, ErrorFront> {
         // Find the new witness
         let not_c = c.value().map(|c| F::ONE - c);
 
@@ -388,7 +388,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         // Find the new witness
         let c = a.value().zip(b.value()).map(|(a, b)| {
             // Non inversion case will never be verified
@@ -418,7 +418,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
-    ) -> Result<(AssignedValue<F>, AssignedCondition<F>), Error> {
+    ) -> Result<(AssignedValue<F>, AssignedCondition<F>), ErrorFront> {
         let (b_inverted, cond) = self.invert(ctx, b)?;
         let res = self.mul(ctx, a, &b_inverted)?;
         Ok((res, cond))
@@ -431,7 +431,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let inverse = a.value().map(|a| {
             // Non inversion case will never be verified.
             a.invert().unwrap_or(F::ZERO)
@@ -453,7 +453,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
-    ) -> Result<(AssignedValue<F>, AssignedCondition<F>), Error> {
+    ) -> Result<(AssignedValue<F>, AssignedCondition<F>), ErrorFront> {
         let (one, zero) = (F::ONE, F::ZERO);
 
         // Returns 'r' as a condition bit that defines if inversion successful or not
@@ -523,7 +523,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: F,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         self.apply(
             ctx,
             [Term::assigned_to_add(a)],
@@ -540,7 +540,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         self.apply(
             ctx,
             [Term::assigned_to_add(a), Term::assigned_to_sub(b)],
@@ -557,7 +557,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         // (a - b) must have an inverse
         let c = self.sub_with_constant(ctx, a, b, F::ZERO)?;
         self.assert_not_zero(ctx, &c)
@@ -569,7 +569,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
-    ) -> Result<AssignedCondition<F>, Error> {
+    ) -> Result<AssignedCondition<F>, ErrorFront> {
         let (one, zero) = (F::ONE, F::ZERO);
 
         // Given a and b equation below is enforced
@@ -637,7 +637,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
     }
 
     /// Enforces that assigned value is zero % w
-    fn assert_zero(&self, ctx: &mut RegionCtx<'_, F>, a: &AssignedValue<F>) -> Result<(), Error> {
+    fn assert_zero(&self, ctx: &mut RegionCtx<'_, F>, a: &AssignedValue<F>) -> Result<(), ErrorFront> {
         self.assert_equal_to_constant(ctx, a, F::ZERO)
     }
 
@@ -646,7 +646,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         // Non-zero element must have an inverse
         // a * w - 1 = 0
 
@@ -671,14 +671,14 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
-    ) -> Result<AssignedCondition<F>, Error> {
+    ) -> Result<AssignedCondition<F>, ErrorFront> {
         let (_, is_zero) = self.invert(ctx, a)?;
         Ok(is_zero)
     }
 
     /// Assigns new bit flag `1` if given value eqauls to `1` otherwise assigns
     /// `0`
-    fn assert_one(&self, ctx: &mut RegionCtx<'_, F>, a: &AssignedValue<F>) -> Result<(), Error> {
+    fn assert_one(&self, ctx: &mut RegionCtx<'_, F>, a: &AssignedValue<F>) -> Result<(), ErrorFront> {
         self.assert_equal_to_constant(ctx, a, F::ONE)
     }
 
@@ -689,7 +689,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         constant: F,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a.value().map(|a| *a + constant);
         Ok(self
             .apply(
@@ -708,7 +708,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         self.sub_with_constant(ctx, a, b, F::ZERO)
     }
 
@@ -720,7 +720,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
         constant: F,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a.value().zip(b.value()).map(|(a, b)| *a - b + constant);
 
         Ok(self
@@ -744,7 +744,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         constant: F,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a.value().map(|a| -*a + constant);
 
         Ok(self
@@ -763,7 +763,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a.value().map(|a| *a + a);
         Ok(self
             .apply(
@@ -785,7 +785,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         &self,
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a.value().map(|a| *a + a + a);
         Ok(self
             .apply(
@@ -809,7 +809,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a.value().zip(b.value()).map(|(a, b)| *a * b);
 
         Ok(self
@@ -834,7 +834,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
         to_add: &AssignedValue<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a
             .value()
             .zip(b.value())
@@ -864,7 +864,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
         to_add: F,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a.value().zip(b.value()).map(|(a, b)| *a * b + to_add);
 
         Ok(self
@@ -888,7 +888,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedCondition<F>,
         b: &AssignedCondition<F>,
-    ) -> Result<AssignedCondition<F>, Error> {
+    ) -> Result<AssignedCondition<F>, ErrorFront> {
         // result + ab - 1 =0
         let result = a.value().zip(b.value()).map(|(a, b)| F::ONE - *a * b);
         let result = self
@@ -913,7 +913,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         self.add_with_constant(ctx, a, b, F::ZERO)
     }
 
@@ -925,7 +925,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
         constant: F,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a.value().zip(b.value()).map(|(a, b)| *a + b + constant);
 
         Ok(self
@@ -951,7 +951,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         b_0: &AssignedValue<F>,
         b_1: &AssignedValue<F>,
         constant: F,
-    ) -> Result<AssignedValue<F>, Error>;
+    ) -> Result<AssignedValue<F>, ErrorFront>;
 
     /// Assings new witness that equals to `a` if `cond` is true or assigned to
     /// `b` if `cond is false
@@ -961,7 +961,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
         cond: &AssignedCondition<F>,
-    ) -> Result<AssignedValue<F>, Error>;
+    ) -> Result<AssignedValue<F>, ErrorFront>;
 
     /// Assings new witness that equals to `to_be_selected` if `cond` is true or
     /// assigned to `to_be_assigned` which is a constat if `cond is false
@@ -971,7 +971,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         to_be_selected: &AssignedValue<F>,
         to_be_assigned: F,
         cond: &AssignedCondition<F>,
-    ) -> Result<AssignedValue<F>, Error>;
+    ) -> Result<AssignedValue<F>, ErrorFront>;
 
     /// Assigns array values of bit values which is equal to decomposition of
     /// given assigned value
@@ -980,7 +980,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         composed: &AssignedValue<F>,
         number_of_bits: usize,
-    ) -> Result<Vec<AssignedCondition<F>>, Error> {
+    ) -> Result<Vec<AssignedCondition<F>>, ErrorFront> {
         assert!(number_of_bits <= F::NUM_BITS as usize);
 
         let decomposed_value = composed
@@ -994,7 +994,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
                 let base = power_of_two::<F>(i);
                 Ok((bit, base))
             })
-            .collect::<Result<Vec<_>, Error>>()?
+            .collect::<Result<Vec<_>, ErrorFront>>()?
             .into_iter()
             .unzip();
 
@@ -1011,13 +1011,13 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
     /// Assigns a new witness composed of given array of terms
     /// `result = constant + term_0 + term_1 + ... `
     /// where `term_i = a_i * q_i`
-    fn decompose<T: FnMut(&mut RegionCtx<'_, F>, bool) -> Result<(), Error>>(
+    fn decompose<T: FnMut(&mut RegionCtx<'_, F>, bool) -> Result<(), ErrorFront>>(
         &self,
         ctx: &mut RegionCtx<'_, F>,
         terms: &[Term<F>],
         constant: F,
         mut enable_lookup: T,
-    ) -> Result<(AssignedValue<F>, Vec<AssignedValue<F>>), Error> {
+    ) -> Result<(AssignedValue<F>, Vec<AssignedValue<F>>), ErrorFront> {
         assert!(!terms.is_empty(), "At least one term is expected");
 
         // Remove zero iterms
@@ -1100,7 +1100,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         terms: &[Term<F>],
         constant: F,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         assert!(!terms.is_empty(), "At least one term is expected");
         let (composed, _) = self.decompose(ctx, terms, constant, |_, _| Ok(()))?;
 
@@ -1115,7 +1115,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         ctx: &mut RegionCtx<'_, F>,
         terms: &[Term<F>],
         constant: F,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         assert!(!terms.is_empty(), "At least one term is expected");
 
         // Remove zero iterms
@@ -1176,7 +1176,7 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
     }
 
     /// Increments the offset with all zero selectors
-    fn no_operation(&self, ctx: &mut RegionCtx<'_, F>) -> Result<(), Error>;
+    fn no_operation(&self, ctx: &mut RegionCtx<'_, F>) -> Result<(), ErrorFront>;
 
     /// Given specific option combines `WIDTH` sized terms and assigns new
     /// value.
@@ -1186,11 +1186,11 @@ pub trait MainGateInstructions<F: PrimeField, const WIDTH: usize>: Chip<F> {
         terms: impl IntoIterator<Item = Term<'t, F>> + 't,
         constant: F,
         options: Self::CombinationOption,
-    ) -> Result<Vec<AssignedValue<F>>, Error>;
+    ) -> Result<Vec<AssignedValue<F>>, ErrorFront>;
 
     /// Intentionally introduce not to be satisfied witnesses. Use only for
     /// debug purposes.
-    fn break_here(&self, ctx: &mut RegionCtx<'_, F>) -> Result<(), Error> {
+    fn break_here(&self, ctx: &mut RegionCtx<'_, F>) -> Result<(), ErrorFront> {
         self.apply(ctx, [], F::ONE, CombinationOptionCommon::OneLinerAdd.into())?;
         Ok(())
     }

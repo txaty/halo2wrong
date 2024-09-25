@@ -10,7 +10,7 @@
 
 use crate::halo2::circuit::{Chip, Layouter};
 use crate::halo2::halo2curves::ff::PrimeField;
-use crate::halo2::plonk::{Advice, Column, ConstraintSystem, Error, Fixed, Instance};
+use crate::halo2::plonk::{Advice, Column, ConstraintSystem, ErrorFront, Fixed, Instance};
 use crate::halo2::poly::Rotation;
 use crate::instructions::{CombinationOptionCommon, MainGateInstructions, Term};
 use crate::{AssignedCondition, AssignedValue};
@@ -139,7 +139,7 @@ impl<F: PrimeField> MainGateInstructions<F, WIDTH> for MainGate<F> {
         mut layouter: impl Layouter<F>,
         value: AssignedValue<F>,
         row: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let config = self.config();
         layouter.constrain_instance(value.cell(), config.instance, row)
     }
@@ -149,7 +149,7 @@ impl<F: PrimeField> MainGateInstructions<F, WIDTH> for MainGate<F> {
         ctx: &mut RegionCtx<'_, F>,
         unassigned: Value<F>,
         column: MainGateColumn,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let column = match column {
             MainGateColumn::A => self.config.a,
             MainGateColumn::B => self.config.b,
@@ -170,7 +170,7 @@ impl<F: PrimeField> MainGateInstructions<F, WIDTH> for MainGate<F> {
         b_0: &AssignedValue<F>,
         b_1: &AssignedValue<F>,
         constant: F,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let c = a
             .value()
             .zip(b_0.value())
@@ -198,7 +198,7 @@ impl<F: PrimeField> MainGateInstructions<F, WIDTH> for MainGate<F> {
         a: &AssignedValue<F>,
         b: &AssignedValue<F>,
         cond: &AssignedCondition<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         // We should satisfy the equation below with bit asserted condition flag
         // c (a-b) + b - res = 0
         // cond * a - cond * b + b - res = 0
@@ -243,7 +243,7 @@ impl<F: PrimeField> MainGateInstructions<F, WIDTH> for MainGate<F> {
         a: &AssignedValue<F>,
         b: F,
         cond: &AssignedCondition<F>,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         // We should satisfy the equation below with bit asserted condition flag
         // c (a-b_constant) + b_constant - res = 0
 
@@ -297,10 +297,10 @@ impl<F: PrimeField> MainGateInstructions<F, WIDTH> for MainGate<F> {
     fn apply<'t>(
         &self,
         ctx: &mut RegionCtx<'_, F>,
-        terms: impl IntoIterator<Item = Term<'t, F>> + 't,
+        terms: impl IntoIterator<Item=Term<'t, F>> + 't,
         constant: F,
         option: CombinationOption<F>,
-    ) -> Result<Vec<AssignedValue<F>>, Error> {
+    ) -> Result<Vec<AssignedValue<F>>, ErrorFront> {
         let terms = terms.into_iter().collect::<Vec<_>>();
         debug_assert!(terms.len() <= WIDTH);
 
@@ -311,22 +311,22 @@ impl<F: PrimeField> MainGateInstructions<F, WIDTH> for MainGate<F> {
             self.config.d,
             self.config.e,
         ]
-        .into_iter()
-        .zip([
-            self.config.sa,
-            self.config.sb,
-            self.config.sc,
-            self.config.sd,
-            self.config.se,
-        ])
-        .zip(terms.iter().chain(iter::repeat(&Term::Zero)))
-        .enumerate()
-        .map(|(idx, ((coeff, base), term))| {
-            let assigned = ctx.assign_advice(|| format!("coeff_{idx}"), coeff, term.coeff())?;
-            ctx.assign_fixed(|| format!("base_{idx}"), base, term.base())?;
-            Ok(assigned)
-        })
-        .collect::<Result<Vec<_>, Error>>()?;
+            .into_iter()
+            .zip([
+                self.config.sa,
+                self.config.sb,
+                self.config.sc,
+                self.config.sd,
+                self.config.se,
+            ])
+            .zip(terms.iter().chain(iter::repeat(&Term::Zero)))
+            .enumerate()
+            .map(|(idx, ((coeff, base), term))| {
+                let assigned = ctx.assign_advice(|| format!("coeff_{idx}"), coeff, term.coeff())?;
+                ctx.assign_fixed(|| format!("base_{idx}"), base, term.base())?;
+                Ok(assigned)
+            })
+            .collect::<Result<Vec<_>, ErrorFront>>()?;
 
         ctx.assign_fixed(|| "s_constant", self.config.s_constant, constant)?;
 
@@ -415,7 +415,7 @@ impl<F: PrimeField> MainGateInstructions<F, WIDTH> for MainGate<F> {
     }
 
     /// Skip this row without any operation
-    fn no_operation(&self, ctx: &mut RegionCtx<'_, F>) -> Result<(), Error> {
+    fn no_operation(&self, ctx: &mut RegionCtx<'_, F>) -> Result<(), ErrorFront> {
         ctx.assign_fixed(|| "s_mul_ab", self.config.s_mul_ab, F::ZERO)?;
         ctx.assign_fixed(|| "s_mul_cd", self.config.s_mul_cd, F::ZERO)?;
         ctx.assign_fixed(|| "sc", self.config.sc, F::ZERO)?;
@@ -524,7 +524,6 @@ impl<F: PrimeField> MainGate<F> {
 
 #[cfg(test)]
 mod tests {
-
     use super::{MainGate, MainGateConfig, Term};
     use crate::curves::{ff::PrimeField, pasta::Fp};
     use crate::halo2::circuit::{Layouter, SimpleFloorPlanner, Value};
@@ -1006,8 +1005,7 @@ mod tests {
 
                     let rand = || -> F { F::random(OsRng) };
 
-                    if self.neg_path {
-                    } else {
+                    if self.neg_path {} else {
                         let one = F::ONE;
                         let zero = F::ZERO;
 

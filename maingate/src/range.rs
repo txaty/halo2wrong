@@ -3,7 +3,7 @@ use crate::halo2::circuit::Chip;
 use crate::halo2::circuit::Layouter;
 use crate::halo2::circuit::Value;
 use crate::halo2::halo2curves::ff::PrimeField;
-use crate::halo2::plonk::{ConstraintSystem, Error, Expression};
+use crate::halo2::plonk::{ConstraintSystem, ErrorFront, Expression};
 use crate::halo2::plonk::{Selector, TableColumn};
 use crate::halo2::poly::Rotation;
 use crate::instructions::{MainGateInstructions, Term};
@@ -67,7 +67,7 @@ pub trait RangeInstructions<F: PrimeField>: Chip<F> {
         unassigned: Value<F>,
         limb_bit_len: usize,
         bit_len: usize,
-    ) -> Result<AssignedValue<F>, Error>;
+    ) -> Result<AssignedValue<F>, ErrorFront>;
 
     /// Decomposes and assign new witness
     fn decompose(
@@ -76,10 +76,10 @@ pub trait RangeInstructions<F: PrimeField>: Chip<F> {
         unassigned: Value<F>,
         limb_bit_len: usize,
         bit_len: usize,
-    ) -> Result<(AssignedValue<F>, Vec<AssignedValue<F>>), Error>;
+    ) -> Result<(AssignedValue<F>, Vec<AssignedValue<F>>), ErrorFront>;
 
     /// Load table in sythnesis time
-    fn load_table(&self, layouter: &mut impl Layouter<F>) -> Result<(), Error>;
+    fn load_table(&self, layouter: &mut impl Layouter<F>) -> Result<(), ErrorFront>;
 }
 
 impl<F: PrimeField> RangeInstructions<F> for RangeChip<F> {
@@ -89,7 +89,7 @@ impl<F: PrimeField> RangeInstructions<F> for RangeChip<F> {
         unassigned: Value<F>,
         limb_bit_len: usize,
         bit_len: usize,
-    ) -> Result<AssignedValue<F>, Error> {
+    ) -> Result<AssignedValue<F>, ErrorFront> {
         let (assigned, _) = self.decompose(ctx, unassigned, limb_bit_len, bit_len)?;
         Ok(assigned)
     }
@@ -100,7 +100,7 @@ impl<F: PrimeField> RangeInstructions<F> for RangeChip<F> {
         unassigned: Value<F>,
         limb_bit_len: usize,
         bit_len: usize,
-    ) -> Result<(AssignedValue<F>, Vec<AssignedValue<F>>), Error> {
+    ) -> Result<(AssignedValue<F>, Vec<AssignedValue<F>>), ErrorFront> {
         let (number_of_limbs, overflow_bit_len) = bit_len.div_rem(&limb_bit_len);
 
         let number_of_limbs = number_of_limbs + if overflow_bit_len > 0 { 1 } else { 0 };
@@ -154,7 +154,7 @@ impl<F: PrimeField> RangeInstructions<F> for RangeChip<F> {
             })
     }
 
-    fn load_table(&self, layouter: &mut impl Layouter<F>) -> Result<(), Error> {
+    fn load_table(&self, layouter: &mut impl Layouter<F>) -> Result<(), ErrorFront> {
         layouter.assign_table(
             || "",
             |mut table| {
@@ -383,7 +383,6 @@ impl<F: PrimeField> RangeChip<F> {
 
 #[cfg(test)]
 mod tests {
-
     use halo2wrong::halo2::arithmetic::Field;
     use halo2wrong::halo2::circuit::Value;
     use halo2wrong::RegionCtx;

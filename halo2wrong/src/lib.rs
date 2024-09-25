@@ -1,12 +1,13 @@
 use halo2::{
     arithmetic::Field,
     circuit::{AssignedCell, Cell, Region, Value},
-    plonk::{Advice, Column, Error, Fixed, Selector},
+    plonk::{Advice, Column, Fixed, Selector},
 };
 
 pub mod utils;
 pub use halo2;
 pub use halo2::halo2curves as curves;
+use halo2::plonk::ErrorFront;
 
 #[derive(Debug)]
 pub struct RegionCtx<'a, F: Field> {
@@ -32,7 +33,7 @@ impl<'a, F: Field> RegionCtx<'a, F> {
         annotation: A,
         column: Column<Fixed>,
         value: F,
-    ) -> Result<AssignedCell<F, F>, Error>
+    ) -> Result<AssignedCell<F, F>, ErrorFront>
     where
         A: Fn() -> AR,
         AR: Into<String>,
@@ -46,7 +47,7 @@ impl<'a, F: Field> RegionCtx<'a, F> {
         annotation: A,
         column: Column<Advice>,
         value: Value<F>,
-    ) -> Result<AssignedCell<F, F>, Error>
+    ) -> Result<AssignedCell<F, F>, ErrorFront>
     where
         A: Fn() -> AR,
         AR: Into<String>,
@@ -55,11 +56,11 @@ impl<'a, F: Field> RegionCtx<'a, F> {
             .assign_advice(annotation, column, self.offset, || value)
     }
 
-    pub fn constrain_equal(&mut self, cell_0: Cell, cell_1: Cell) -> Result<(), Error> {
+    pub fn constrain_equal(&mut self, cell_0: Cell, cell_1: Cell) -> Result<(), ErrorFront> {
         self.region.constrain_equal(cell_0, cell_1)
     }
 
-    pub fn enable(&mut self, selector: Selector) -> Result<(), Error> {
+    pub fn enable(&mut self, selector: Selector) -> Result<(), ErrorFront> {
         selector.enable(&mut self.region, self.offset)
     }
 

@@ -1,14 +1,15 @@
 use super::{IntegerChip, IntegerInstructions, Range};
+use crate::halo2::plonk::ErrorFront;
 use crate::rns::{Common, Integer, MaybeReduced};
 use crate::{AssignedInteger, PrimeField};
-use halo2::{arithmetic::Field, plonk::Error};
+use halo2::arithmetic::Field;
 use maingate::{
     halo2, AssignedValue, CombinationOptionCommon, MainGateInstructions, RangeInstructions,
     RegionCtx, Term,
 };
 
 impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn constrain_binary_crt(
         &self,
@@ -16,7 +17,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         t: &[AssignedValue<N>; NUMBER_OF_LIMBS],
         result: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         residues: Vec<AssignedValue<N>>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let main_gate = self.main_gate();
         let (zero, one) = (N::ZERO, N::ONE);
 
@@ -70,7 +71,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
         let (zero, one) = (N::ZERO, N::ONE);
 
@@ -93,7 +94,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
             .residues()
             .iter()
             .map(|v| range_chip.assign(ctx, *v, Self::sublimb_bit_len(), self.rns.mul_v_bit_len))
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         // Witness layout for `NUMBER_OF_LIMBS = 4`:
         // | A   | B   | C   | D     |
@@ -126,7 +127,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 } else {
                     CombinationOptionCommon::CombineToNextMul(one)
                 }
-                .into();
+                    .into();
 
                 let t_i = main_gate
                     .apply(
@@ -198,7 +199,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
         let (zero, one) = (N::ZERO, N::ONE);
 
@@ -218,7 +219,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
             .residues()
             .iter()
             .map(|v| range_chip.assign(ctx, *v, Self::sublimb_bit_len(), self.rns.mul_v_bit_len))
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         // Assign intermediate values
         let t: Vec<AssignedValue<N>> = witness
@@ -238,7 +239,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                     .collect();
                 main_gate.compose(ctx, &terms[..], zero)
             })
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         // Constrain binary part of crt
         self.constrain_binary_crt(
@@ -272,7 +273,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let main_gate = self.main_gate();
         let (zero, one) = (N::ZERO, N::ONE);
 
@@ -293,7 +294,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
             .residues()
             .iter()
             .map(|v| range_chip.assign(ctx, *v, Self::sublimb_bit_len(), self.rns.mul_v_bit_len))
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         let mut t: Vec<AssignedValue<N>> = vec![];
 
@@ -309,7 +310,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 } else {
                     CombinationOptionCommon::CombineToNextMul(one)
                 }
-                .into();
+                    .into();
 
                 let t_i = main_gate
                     .apply(

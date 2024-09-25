@@ -1,7 +1,7 @@
 use super::{AssignedInteger, UnassignedInteger};
-use crate::maingate::{halo2, AssignedCondition, RegionCtx};
+use crate::halo2::plonk::ErrorFront;
+use crate::maingate::{AssignedCondition, RegionCtx};
 use crate::rns::Integer;
-use halo2::plonk::Error;
 use maingate::halo2::halo2curves::ff::PrimeField;
 
 /// Signals the range mode that should be applied while assigning a new
@@ -33,7 +33,7 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         integer: UnassignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         range: Range,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Assigns an [`Integer`] constant to a cell in the circuit returning an
     /// [`AssignedInteger`].
@@ -41,14 +41,14 @@ pub trait IntegerInstructions<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         integer: W,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Decomposes an [`AssignedInteger`] into its bit representation.
     fn decompose(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         integer: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<Vec<AssignedCondition<N>>, Error>;
+    ) -> Result<Vec<AssignedCondition<N>>, ErrorFront>;
 
     /// Adds 2 [`AssignedInteger`].
     fn add(
@@ -56,7 +56,7 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Adds up 3 [`AssignedInteger`]
     fn add_add(
@@ -65,7 +65,7 @@ pub trait IntegerInstructions<
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b_0: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b_1: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Adds an [`AssignedInteger`] and a constant.
     fn add_constant(
@@ -73,21 +73,21 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Multiplies an [`AssignedInteger`] by 2.
     fn mul2(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Multiplies an [`AssignedInteger`] by 3.
     fn mul3(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Substracts an [`AssignedInteger`].
     fn sub(
@@ -95,7 +95,7 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Substracts 2 [`AssignedInteger`].
     fn sub_sub(
@@ -104,14 +104,14 @@ pub trait IntegerInstructions<
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b_0: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b_1: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Multiplies an [`AssignedInteger`] by -1.
     fn neg(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Multiplies 2 [`AssignedInteger`].
     fn mul(
@@ -119,7 +119,7 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Multiplies [`AssignedInteger`] by constant.
     fn mul_constant(
@@ -127,7 +127,7 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Check 2 [`AssignedInteger`] are inverses, equivalently their product is
     /// 1.
@@ -136,14 +136,14 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Squares an [`AssignedInteger`].
     fn square(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Divides 2 [`AssignedInteger`]. An [`AssignedCondition`] is returned
     /// along with the division result indicating if the operation was
@@ -158,7 +158,7 @@ pub trait IntegerInstructions<
             AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
             AssignedCondition<N>,
         ),
-        Error,
+        ErrorFront,
     >;
 
     /// Divides 2 [`AssignedInteger`]. Assumes denominator is not zero.
@@ -167,7 +167,7 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Inverts an [`AssignedInteger`]. An [`AssignedCondition`] is returned
     /// along with the inversion result indicating if the operation was
@@ -181,7 +181,7 @@ pub trait IntegerInstructions<
             AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
             AssignedCondition<N>,
         ),
-        Error,
+        ErrorFront,
     >;
 
     /// Inverts an [`AssignedInteger`]. Assumes the input is not zero.
@@ -189,7 +189,7 @@ pub trait IntegerInstructions<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Applies reduction to an [`AssignedInteger`]. Reduces the input less than
     /// next power of two of the modulus
@@ -197,7 +197,7 @@ pub trait IntegerInstructions<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Constraints that two [`AssignedInteger`] are equal.
     fn assert_equal(
@@ -205,7 +205,7 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constraints that limbs of two [`AssignedInteger`] are equal.
     fn assert_strict_equal(
@@ -213,7 +213,7 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constraints that two [`AssignedInteger`] are not equal.
     fn assert_not_equal(
@@ -221,28 +221,28 @@ pub trait IntegerInstructions<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constraints that an [`AssignedInteger`] is not equal to zero
     fn assert_not_zero(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constraints that an [`AssignedInteger`] is equal to zero
     fn assert_zero(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constraints that limbs of an [`AssignedInteger`] is equal to zero
     fn assert_strict_zero(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constraints that first limb of an [`AssignedInteger`] is equal to one
     /// and others are zero
@@ -250,7 +250,7 @@ pub trait IntegerInstructions<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constraints that first limb of an [`AssignedInteger`] is a bit
     /// and others are zero
@@ -258,14 +258,14 @@ pub trait IntegerInstructions<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Constraints that an [`AssignedInteger`] is less than modulus
     fn assert_in_field(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         input: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error>;
+    ) -> Result<(), ErrorFront>;
 
     /// Given an [`AssignedCondition`] returns picks one of two
     /// [`AssignedInteger`]
@@ -275,7 +275,7 @@ pub trait IntegerInstructions<
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         cond: &AssignedCondition<N>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Given an [`AssignedCondition`] returns picks either an
     /// [`AssignedInteger`] or an unassigned integer
@@ -285,7 +285,7 @@ pub trait IntegerInstructions<
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         cond: &AssignedCondition<N>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Tries to apply reduction to an [`AssignedInteger`] that is not in this
     /// wrong field
@@ -293,12 +293,12 @@ pub trait IntegerInstructions<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<T, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error>;
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront>;
 
     /// Applies % 2 to the given input
     fn sign(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedCondition<N>, Error>;
+    ) -> Result<AssignedCondition<N>, ErrorFront>;
 }

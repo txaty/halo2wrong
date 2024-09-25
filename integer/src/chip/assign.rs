@@ -1,8 +1,8 @@
 use super::{IntegerChip, Range};
+use crate::halo2::plonk::ErrorFront;
 use crate::rns::{Common, Integer};
 use crate::{AssignedInteger, AssignedLimb, UnassignedInteger};
 use halo2::halo2curves::ff::PrimeField;
-use halo2::plonk::Error;
 use maingate::{fe_to_big, halo2, MainGateInstructions, RangeInstructions, RegionCtx, Term};
 use num_bigint::BigUint as big_uint;
 use num_traits::One;
@@ -16,7 +16,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         ctx: &mut RegionCtx<'_, N>,
         integer: UnassignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         range: Range,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let range_chip = self.range_chip();
         let main_gate = self.main_gate();
 
@@ -43,7 +43,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                         self.rns.max_unreduced_limb.clone(),
                     ))
                 })
-                .collect::<Result<Vec<AssignedLimb<N>>, Error>>(),
+                .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>(),
             _ => {
                 limbs
                     .into_iter()
@@ -76,7 +76,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                             },
                         )
                     })
-                    .collect::<Result<Vec<AssignedLimb<N>>, Error>>()
+                    .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()
             }
         }?;
 
@@ -94,7 +94,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         integer: W,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer = Integer::from_fe(integer, Rc::clone(&self.rns));
         let main_gate = self.main_gate();
 
@@ -114,7 +114,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                     fe_to_big(*limb),
                 ))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?;
 
         let native = main_gate.assign_constant(ctx, integer.native())?;
 

@@ -1,20 +1,20 @@
 use crate::chip::IntegerChip;
+use crate::halo2::plonk::ErrorFront;
 use crate::rns::Integer;
 use crate::{AssignedInteger, AssignedLimb, Common, PrimeField};
-use halo2::plonk::Error;
-use maingate::{fe_to_big, halo2, MainGateInstructions, RegionCtx, Term};
+use maingate::{fe_to_big, MainGateInstructions, RegionCtx, Term};
 use num_bigint::BigUint as big_uint;
 use std::rc::Rc;
 
 impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn add_generic(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
 
         let c_limbs = a
@@ -26,7 +26,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 let c_limb = main_gate.add(ctx, &a_limb.into(), &b_limb.into())?;
                 Ok(AssignedLimb::from(c_limb, c_max))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?
             .try_into()
             .unwrap();
         let c_native = main_gate.add(ctx, a.native(), b.native())?;
@@ -39,7 +39,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b_0: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b_1: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
 
         let c_limbs = a
@@ -60,7 +60,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 )?;
                 Ok(AssignedLimb::from(c_limb, c_max))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?
             .try_into()
             .unwrap();
         let c_native = main_gate.compose(
@@ -80,7 +80,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
         let aux = Integer::subtracion_aux(&b.max_vals(), Rc::clone(&self.rns));
 
@@ -95,7 +95,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                     main_gate.sub_with_constant(ctx, &a_limb.into(), &b_limb.into(), *aux)?;
                 Ok(AssignedLimb::from(c_limb, c_max))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?
             .try_into()
             .unwrap();
         let c_native = main_gate.sub_with_constant(ctx, a.native(), b.native(), aux.native())?;
@@ -108,7 +108,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b_0: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b_1: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
 
         let max_vals = b_0
@@ -138,7 +138,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 )?;
                 Ok(AssignedLimb::from(c_limb, c_max))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?
             .try_into()
             .unwrap();
         let c_native = main_gate.sub_sub_with_constant(
@@ -155,7 +155,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
         let aux = a.make_aux();
 
@@ -167,7 +167,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 let c_limb = main_gate.neg_with_constant(ctx, &a_limb.into(), *aux)?;
                 Ok(AssignedLimb::from(c_limb, fe_to_big(*aux)))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?
             .try_into()
             .unwrap();
         let c_native = main_gate.neg_with_constant(ctx, a.native(), aux.native())?;
@@ -178,7 +178,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
 
         let c_limbs = a
@@ -189,7 +189,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 let c_limb = main_gate.mul2(ctx, &a_limb.into())?;
                 Ok(AssignedLimb::from(c_limb, c_max))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?
             .try_into()
             .unwrap();
         let c_native = main_gate.mul2(ctx, a.native())?;
@@ -200,7 +200,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
 
         let c_limbs = a
@@ -211,7 +211,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 let c_limb = main_gate.mul3(ctx, &a_limb.into())?;
                 Ok(AssignedLimb::from(c_limb, c_max))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?
             .try_into()
             .unwrap();
         let c_native = main_gate.mul3(ctx, a.native())?;
@@ -223,7 +223,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &Integer<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
 
         let c_limbs = a
@@ -235,7 +235,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 let c_limb = main_gate.add_constant(ctx, &a_limb.into(), *b_limb)?;
                 Ok(AssignedLimb::from(c_limb, c_max))
             })
-            .collect::<Result<Vec<AssignedLimb<N>>, Error>>()?
+            .collect::<Result<Vec<AssignedLimb<N>>, ErrorFront>>()?
             .try_into()
             .unwrap();
         let c_native = main_gate.add_constant(ctx, a.native(), b.native())?;

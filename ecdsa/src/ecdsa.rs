@@ -2,11 +2,12 @@ use super::integer::{IntegerChip, IntegerConfig};
 use crate::halo2;
 use crate::integer;
 use crate::maingate;
+use ecc::halo2::plonk::ErrorFront;
 use ecc::maingate::RegionCtx;
 use ecc::{AssignedPoint, EccConfig, GeneralEccChip};
 use halo2::arithmetic::CurveAffine;
 use halo2::halo2curves::ff::PrimeField;
-use halo2::{circuit::Value, plonk::Error};
+use halo2::circuit::Value;
 use integer::rns::Integer;
 use integer::{AssignedInteger, IntegerInstructions};
 use maingate::{MainGateConfig, RangeConfig};
@@ -98,7 +99,7 @@ impl<E: CurveAffine, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_
         sig: &AssignedEcdsaSig<E::Scalar, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         pk: &AssignedPublicKey<E::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         msg_hash: &AssignedInteger<E::Scalar, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let ecc_chip = self.ecc_chip();
         let scalar_chip = ecc_chip.scalar_field_chip();
         let base_chip = ecc_chip.base_field_chip();
@@ -143,6 +144,7 @@ mod tests {
     use crate::halo2;
     use crate::integer;
     use crate::maingate;
+    use ecc::halo2::plonk::ErrorFront;
     use ecc::integer::Range;
     use ecc::maingate::big_to_fe;
     use ecc::maingate::fe_to_big;
@@ -154,7 +156,7 @@ mod tests {
         ff::{Field, FromUniformBytes, PrimeField},
         group::{Curve, Group},
     };
-    use halo2::plonk::{Circuit, ConstraintSystem, Error};
+    use halo2::plonk::{Circuit, ConstraintSystem};
     use integer::IntegerInstructions;
     use maingate::mock_prover_verify;
     use maingate::{MainGate, MainGateConfig, RangeChip, RangeConfig, RangeInstructions};
@@ -199,7 +201,7 @@ mod tests {
         pub fn config_range<N: PrimeField>(
             &self,
             layouter: &mut impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let range_chip = RangeChip::<N>::new(self.range_config.clone());
             range_chip.load_table(layouter)?;
 
@@ -236,7 +238,7 @@ mod tests {
             &self,
             config: Self::Config,
             mut layouter: impl Layouter<N>,
-        ) -> Result<(), Error> {
+        ) -> Result<(), ErrorFront> {
             let mut ecc_chip = GeneralEccChip::<E, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>::new(
                 config.ecc_chip_config(),
             );
@@ -327,7 +329,7 @@ mod tests {
                 let s_inv = s.invert().unwrap();
                 let u_1 = msg_hash * s_inv;
                 let u_2 = r * s_inv;
-                let r_point = ((g * u_1) + (public_key * u_2))
+                let r_point = ((g * u_1) + (public_key.clone() * u_2))
                     .to_affine()
                     .coordinates()
                     .unwrap();

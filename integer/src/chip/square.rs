@@ -1,20 +1,21 @@
 use super::{IntegerChip, IntegerInstructions, Range};
+use crate::halo2::plonk::ErrorFront;
 use crate::{rns::MaybeReduced, AssignedInteger, PrimeField};
-use halo2::{arithmetic::Field, plonk::Error};
+use halo2::arithmetic::Field;
 use maingate::{
     halo2, AssignedValue, CombinationOptionCommon, MainGateInstructions, RangeInstructions,
     RegionCtx, Term,
 };
 
 impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     #[allow(clippy::needless_range_loop)]
     pub(super) fn square_generic(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let main_gate = self.main_gate();
         let (zero, one) = (N::ZERO, N::ONE);
 
@@ -35,7 +36,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
             .residues()
             .iter()
             .map(|v| range_chip.assign(ctx, *v, Self::sublimb_bit_len(), self.rns.mul_v_bit_len))
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         // Follow same witness layout with mul:
         // | A   | B   | C   | D     |
@@ -68,7 +69,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 } else {
                     CombinationOptionCommon::CombineToNextMul(one)
                 }
-                .into();
+                    .into();
 
                 let t_i = main_gate
                     .apply(

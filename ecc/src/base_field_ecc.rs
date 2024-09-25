@@ -1,10 +1,10 @@
 use super::{make_mul_aux, AssignedPoint, EccConfig, MulAux, Point};
+use crate::halo2::plonk::ErrorFront;
 use crate::integer::chip::IntegerChip;
 use crate::integer::rns::{Integer, Rns};
 use crate::{halo2, maingate};
 use halo2::arithmetic::CurveAffine;
 use halo2::circuit::Layouter;
-use halo2::plonk::Error;
 use integer::halo2::circuit::Value;
 use integer::maingate::{MainGateInstructions, RegionCtx};
 use integer::{IntegerInstructions, Range};
@@ -88,14 +88,14 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         window_size: usize,
         number_of_pairs: usize,
-    ) -> Result<MulAux<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<MulAux<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let to_add = match self.aux_generator.clone() {
             Some((assigned, _)) => Ok(assigned),
-            None => Err(Error::Synthesis),
+            None => Err(ErrorFront::Synthesis),
         }?;
         let to_sub = match self.aux_registry.get(&(window_size, number_of_pairs)) {
             Some(aux) => Ok(aux.clone()),
-            None => Err(Error::Synthesis),
+            None => Err(ErrorFront::Synthesis),
         }?;
         // to_add the equivalent of AuxInit and to_sub AuxFin
         // see https://hackmd.io/ncuKqRXzR-Cw-Au2fGzsMg?view
@@ -112,7 +112,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         mut layouter: impl Layouter<C::Scalar>,
         point: AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         offset: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let main_gate = self.main_gate();
 
         let mut offset = offset;
@@ -133,7 +133,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         point: C,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let coords = point.coordinates();
         // disallow point of infinity
         let coords = coords.unwrap();
@@ -148,7 +148,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         point: Value<C>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.integer_chip();
 
         let point = point.map(|point| self.to_rns_point(point));
@@ -169,7 +169,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &mut self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         aux_generator: Value<C>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let aux_generator_assigned = self.assign_point(ctx, aux_generator)?;
         self.aux_generator = Some((aux_generator_assigned, aux_generator));
         Ok(())
@@ -182,7 +182,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         window_size: usize,
         number_of_pairs: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         match self.aux_generator {
             Some((_, point)) => {
                 let aux = point.map(|point| make_mul_aux(point, window_size, number_of_pairs));
@@ -192,7 +192,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
                 Ok(())
             }
             // aux generator is not assigned yet
-            None => Err(Error::Synthesis),
+            None => Err(ErrorFront::Synthesis),
         }
     }
 
@@ -201,7 +201,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         point: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let integer_chip = self.integer_chip();
 
         let y_square = &integer_chip.square(ctx, point.y())?;
@@ -218,7 +218,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         p0: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         p1: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let integer_chip = self.integer_chip();
         integer_chip.assert_equal(ctx, p0.x(), p1.x())?;
         integer_chip.assert_equal(ctx, p0.y(), p1.y())
@@ -231,7 +231,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         c: &AssignedCondition<C::Scalar>,
         p1: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         p2: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.integer_chip();
         let x = integer_chip.select(ctx, p1.x(), p2.x(), c)?;
         let y = integer_chip.select(ctx, p1.y(), p2.y(), c)?;
@@ -246,7 +246,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         c: &AssignedCondition<C::Scalar>,
         p1: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         p2: C,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.integer_chip();
         let p2 = self.to_rns_point(p2);
         let x = integer_chip.select_or_assign(ctx, p1.x(), p2.x(), c)?;
@@ -259,7 +259,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         point: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.integer_chip();
         let x = integer_chip.reduce(ctx, point.x())?;
         let y = integer_chip.reduce(ctx, point.y())?;
@@ -272,7 +272,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         p0: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         p1: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         // guarantees that p0 != p1 or p0 != p1
         // so that we can use unsafe addition formula which assumes operands are not
         // equal addition to that we strictly disallow addition result to be
@@ -287,7 +287,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         p: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         // point must be asserted to be in curve and not infinity
         self._double_incomplete(ctx, p)
     }
@@ -298,7 +298,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         p: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         logn: usize,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let mut acc = p.clone();
         for _ in 0..logn {
             acc = self._double_incomplete(ctx, &acc)?;
@@ -313,7 +313,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         ctx: &mut RegionCtx<'_, C::Scalar>,
         to_double: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         to_add: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         self._ladder_incomplete(ctx, to_double, to_add)
     }
 
@@ -322,7 +322,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         p: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let integer_chip = self.integer_chip();
         let y_neg = integer_chip.neg(ctx, p.y())?;
         Ok(AssignedPoint::new(p.x().clone(), y_neg))
@@ -333,7 +333,7 @@ impl<C: CurveAffine, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
         &self,
         ctx: &mut RegionCtx<'_, C::Scalar>,
         p: &AssignedPoint<C::Base, C::Scalar, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedCondition<C::Scalar>, Error> {
+    ) -> Result<AssignedCondition<C::Scalar>, ErrorFront> {
         self.integer_chip().sign(ctx, p.y())
     }
 }
@@ -348,6 +348,7 @@ mod tests {
     use crate::curves::bn256::G1Affine as Bn256;
     use crate::curves::pasta::{EpAffine as Pallas, EqAffine as Vesta};
     use crate::halo2;
+    use crate::halo2::plonk::ErrorFront;
     use crate::integer::rns::Rns;
     use crate::integer::NUMBER_OF_LOOKUP_LIMBS;
     use crate::maingate;
@@ -603,10 +604,10 @@ mod tests {
             let a = <C as CurveAffine>::CurveExt::random(OsRng).to_affine();
             let b = <C as CurveAffine>::CurveExt::random(OsRng).to_affine();
 
-            let c0: C = (a + b).to_affine();
+            let c0: C = (a.clone() + b.clone()).to_affine();
             let c0 = Point::new(Rc::clone(&rns), c0);
             let mut public_data = c0.public();
-            let c1: C = (a + a).to_affine();
+            let c1: C = (a.clone() + a.clone()).to_affine();
             let c1 = Point::new(Rc::clone(&rns), c1);
             public_data.extend(c1.public());
 
@@ -777,7 +778,7 @@ mod tests {
                             let s = main_gate.assign_value(ctx, Value::known(s))?;
                             Ok((base, s))
                         })
-                        .collect::<Result<_, Error>>()?;
+                        .collect::<Result<_, ErrorFront>>()?;
 
                     let result_0 = ecc_chip.assign_point(ctx, Value::known(acc.into()))?;
                     let result_1 =

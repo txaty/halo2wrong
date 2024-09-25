@@ -1,9 +1,9 @@
 use super::AssignedPoint;
 use super::GeneralEccChip;
 use crate::halo2;
+use crate::halo2::plonk::ErrorFront;
 use halo2::arithmetic::CurveAffine;
 use halo2::halo2curves::ff::PrimeField;
-use halo2::plonk::Error;
 use integer::maingate::RegionCtx;
 use integer::IntegerInstructions;
 
@@ -24,7 +24,7 @@ impl<
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let ch = self.base_field_chip();
 
         // lambda = b_y - a_y / b_x - a_x
@@ -53,7 +53,7 @@ impl<
         &self,
         ctx: &mut RegionCtx<'_, N>,
         point: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let ch = self.base_field_chip();
 
         // lambda = (3 * a_x^2) / 2 * a_y
@@ -82,7 +82,7 @@ impl<
         ctx: &mut RegionCtx<'_, N>,
         to_double: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         to_add: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let ch = self.base_field_chip();
 
         // (P + Q) + P

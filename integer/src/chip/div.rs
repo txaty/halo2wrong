@@ -1,14 +1,15 @@
 use super::{IntegerChip, IntegerInstructions, Range};
+use crate::halo2::plonk::ErrorFront;
 use crate::rns::MaybeReduced;
 use crate::{AssignedInteger, PrimeField};
-use halo2::{arithmetic::Field, plonk::Error};
+use halo2::arithmetic::Field;
 use maingate::{
     halo2, AssignedCondition, AssignedValue, CombinationOptionCommon, MainGateInstructions,
     RangeInstructions, RegionCtx, Term,
 };
 
 impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn div_generic(
         &self,
@@ -20,7 +21,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
             AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
             AssignedCondition<N>,
         ),
-        Error,
+        ErrorFront,
     > {
         let (b_inv, cond) = self.invert_generic(ctx, b)?;
         let a_mul_b_inv = self.mul_generic(ctx, a, &b_inv)?;
@@ -34,7 +35,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         b: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         // a / b = result
         // a = b * result
         // self + w * quotient = b * result
@@ -61,7 +62,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
             .residues()
             .iter()
             .map(|v| range_chip.assign(ctx, *v, Self::sublimb_bit_len(), self.rns.mul_v_bit_len))
-            .collect::<Result<Vec<AssignedValue<N>>, Error>>()?;
+            .collect::<Result<Vec<AssignedValue<N>>, ErrorFront>>()?;
 
         let mut t: Vec<AssignedValue<N>> = vec![];
 
@@ -77,7 +78,7 @@ impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_L
                 } else {
                     CombinationOptionCommon::CombineToNextMul(one)
                 }
-                .into();
+                    .into();
 
                 let t_i = main_gate
                     .apply(

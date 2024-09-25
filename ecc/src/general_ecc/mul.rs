@@ -1,10 +1,10 @@
 use super::{AssignedPoint, GeneralEccChip};
+use crate::halo2::plonk::ErrorFront;
 use crate::integer::{AssignedInteger, IntegerInstructions};
 use crate::maingate::{AssignedCondition, MainGateInstructions};
 use crate::{halo2, Selector, Table, Windowed};
 use halo2::arithmetic::CurveAffine;
 use halo2::halo2curves::ff::PrimeField;
-use halo2::plonk::Error;
 use integer::maingate::RegionCtx;
 
 impl<
@@ -20,7 +20,7 @@ impl<
         region: &mut RegionCtx<'_, N>,
         bits: &mut Vec<AssignedCondition<N>>,
         window_size: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         assert_eq!(bits.len(), Emulated::ScalarExt::NUM_BITS as usize);
 
         // TODO: This is a tmp workaround. Instead of padding with zeros we can use a
@@ -28,7 +28,7 @@ impl<
         let padding_offset = (window_size - (bits.len() % window_size)) % window_size;
         let zeros: Vec<AssignedCondition<N>> = (0..padding_offset)
             .map(|_| self.main_gate().assign_constant(region, N::ZERO))
-            .collect::<Result<_, Error>>()?;
+            .collect::<Result<_, ErrorFront>>()?;
         bits.extend(zeros);
         bits.reverse();
 
@@ -61,7 +61,7 @@ impl<
         aux: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         point: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         window_size: usize,
-    ) -> Result<Table<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<Table<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let table_size = 1 << window_size;
         let mut table = vec![aux.clone()];
         for i in 0..(table_size - 1) {
@@ -76,7 +76,7 @@ impl<
         region: &mut RegionCtx<'_, N>,
         selector: &Selector<N>,
         table: &Table<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         let number_of_points = table.0.len();
         let number_of_selectors = selector.0.len();
         assert_eq!(number_of_points, 1 << number_of_selectors);
@@ -100,7 +100,7 @@ impl<
         point: &AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         scalar: &AssignedInteger<Emulated::Scalar, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         window_size: usize,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         assert!(window_size > 0);
         let aux = self.get_mul_aux(window_size, 1)?;
 
@@ -140,7 +140,7 @@ impl<
             AssignedInteger<Emulated::Scalar, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
         )>,
         window_size: usize,
-    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, Error> {
+    ) -> Result<AssignedPoint<Emulated::Base, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>, ErrorFront> {
         assert!(window_size > 0);
         assert!(!pairs.is_empty());
         let aux = self.get_mul_aux(window_size, pairs.len())?;
@@ -150,7 +150,7 @@ impl<
         let mut decomposed_scalars: Vec<Vec<AssignedCondition<N>>> = pairs
             .iter()
             .map(|(_, scalar)| scalar_chip.decompose(region, scalar))
-            .collect::<Result<_, Error>>()?;
+            .collect::<Result<_, ErrorFront>>()?;
 
         // 2. Pad scalars bit representations
         for decomposed in decomposed_scalars.iter_mut() {
@@ -175,7 +175,7 @@ impl<
                 }
                 table
             })
-            .collect::<Result<_, Error>>()?;
+            .collect::<Result<_, ErrorFront>>()?;
 
         // preparation for the first round
         // initialize accumulator

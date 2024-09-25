@@ -1,18 +1,18 @@
 use super::IntegerChip;
+use crate::halo2::plonk::ErrorFront;
 use crate::{AssignedInteger, PrimeField};
-use halo2::plonk::Error;
-use maingate::{halo2, CombinationOptionCommon, MainGateInstructions, RegionCtx, Term};
+use maingate::{CombinationOptionCommon, MainGateInstructions, RegionCtx, Term};
 use num_bigint::BigUint as big_uint;
 use std::convert::TryInto;
 
 impl<W: PrimeField, N: PrimeField, const NUMBER_OF_LIMBS: usize, const BIT_LEN_LIMB: usize>
-    IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
+IntegerChip<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>
 {
     pub(super) fn assert_not_zero_generic(
         &self,
         ctx: &mut RegionCtx<'_, N>,
         a: &AssignedInteger<W, N, NUMBER_OF_LIMBS, BIT_LEN_LIMB>,
-    ) -> Result<(), Error> {
+    ) -> Result<(), ErrorFront> {
         let main_gate = self.main_gate();
         let one = N::ONE;
 
