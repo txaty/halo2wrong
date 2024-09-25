@@ -8,6 +8,7 @@ pub mod utils;
 pub use halo2;
 pub use halo2::halo2curves as curves;
 use halo2::plonk::ErrorFront;
+pub use halo2_frontend;
 
 #[derive(Debug)]
 pub struct RegionCtx<'a, F: Field> {
